@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="家庭安防">
     <link rel="manifest" href="manifest.json">
@@ -49,12 +50,14 @@
     </div>
     <div class="logs"><h4>事件记录</h4><div id="logList"><div class="log-item"><span>--</span><span class="tag">等待事件</span></div></div></div>
     <script>
-        // ========== 修改下面的三个值 ==========
-        const PRODUCT_ID = "W9Obq2w01j";          
+        // ========== 请修改下面的三个值 ==========
+        const PRODUCT_ID = "W9Obq2w01j";          // 例如 "3ojQ2pkCWF"
         const DEVICE_NAME = "ESP32_HomeGuard";   // 设备名称
-        const PRODUCT_TOKEN = "version=2018-10-31&res=products%2FW9Obq2w01j&et=1893456000&method=md5&sign=EpvLGFTUYQ5eQySUc0BZmA%3D%3D";   // 用Python脚本生成的产品Token，每次过1小时需要重新生成
+        const PRODUCT_TOKEN = "version=2018-10-31&res=products%2FW9Obq2w01j&et=1893456000&method=md5&sign=EpvLGFTUYQ5eQySUc0BZmA%3D%3D";   
+        // 使用 CORS 代理解决跨域问题
+        const API_BASE = `https://open.iot.10086.cn/api/v1/devices/${DEVICE_NAME}/datastreams?product_id=${PRODUCT_ID}`;
+        const API_URL = `https://api.allorigins.win/raw?url=${encodeURIComponent(API_BASE)}`;
         
-        const API_URL = `https://open.iot.10086.cn/api/v1/devices/${DEVICE_NAME}/datastreams?product_id=${PRODUCT_ID}`;
         let lastId = "";
         const box = document.getElementById("box"), icon = document.getElementById("icon"), text = document.getElementById("text"), level = document.getElementById("level"), logList = document.getElementById("logList");
         const events = {0:"glass_break",1:"baby_cry",2:"knock"};
@@ -86,6 +89,7 @@
                     headers:{"Authorization": PRODUCT_TOKEN}
                 });
                 const json=await res.json();
+                console.log("API返回:", json);
                 if(json.errno!==0)return;
                 const data=json.data;
                 const evtStream=data.find(d=>d.id==="event");
@@ -100,7 +104,9 @@
                 icon.textContent=info[0];text.textContent=info[1];level.textContent=new Date().toLocaleTimeString();
                 addLog(name,info[1],info[3]);
                 reset();
-            }catch(e){}
+            }catch(e){
+                console.error("API请求失败:", e);
+            }
         }
         setInterval(fetchData,2000);
         fetchData();
