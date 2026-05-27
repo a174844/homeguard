@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="家庭安防">
+    <link rel="manifest" href="manifest.json">
+    <title>家庭安防</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#0a0a0a;color:#fff;font-family:'Microsoft YaHei',sans-serif;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;user-select:none}
+        .status{font-size:14px;color:#888;margin-bottom:20px}
+        .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+        .dot.online{background:#0f0;box-shadow:0 0 10px #0f0;animation:pulse 1.5s infinite}
+        .dot.offline{background:#f00}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+        .card{width:90%;max-width:380px;background:#111;border-radius:20px;padding:30px 20px;text-align:center;border:1px solid #222}
+        h2{font-size:20px;color:#ccc;margin-bottom:8px}
+        .subtitle{font-size:12px;color:#555;margin-bottom:20px}
+        .alarm-box{background:#1a1a1a;border-radius:15px;padding:35px 20px;border:2px solid #222;transition:all 0.3s}
+        .alarm-box.glass{border-color:#f00;background:#200;animation:flash 0.3s infinite}
+        .alarm-box.baby{border-color:#f90;background:#210}
+        .alarm-box.knock{border-color:#0af;background:#012}
+        @keyframes flash{0%,100%{background:#200}50%{background:#400}}
+        .icon{font-size:55px;margin-bottom:8px}
+        .event-text{font-size:22px;font-weight:bold}
+        .event-level{font-size:13px;color:#999;margin-top:5px}
+        .logs{width:90%;max-width:380px;max-height:180px;overflow-y:auto;text-align:left;margin-top:15px}
+        .logs h4{font-size:13px;color:#555;margin-bottom:8px}
+        .log-item{font-size:11px;color:#aaa;padding:6px 8px;border-bottom:1px solid #1a1a1a;display:flex;justify-content:space-between}
+        .tag{padding:2px 8px;border-radius:10px;font-size:10px}
+        .tag.glass{background:#400;color:#f66}
+        .tag.baby{background:#430;color:#fa0}
+        .tag.knock{background:#023;color:#0af}
+    </style>
+</head>
+<body>
+    <div class="status"><span id="dot" class="dot online"></span><span id="statusText">监控中</span></div>
+    <div class="card">
+        <h2>家庭安防系统</h2>
+        <div class="subtitle">基于声音事件识别</div>
+        <div id="box" class="alarm-box">
+            <div class="icon" id="icon">🟢</div>
+            <div class="event-text" id="text">待机中</div>
+            <div class="event-level" id="level">正在监听环境声音</div>
+        </div>
+    </div>
+    <div class="logs"><h4>事件记录</h4><div id="logList"><div class="log-item"><span>--</span><span class="tag">等待事件</span></div></div></div>
+    <script>
+        // ========== 修改下面的三个值 ==========
+        const PRODUCT_ID = "W9Obq2w01j";          
+        const DEVICE_NAME = "ESP32_HomeGuard";   // 设备名称
+        const PRODUCT_TOKEN = "version=2018-10-31&res=products%2FW9Obq2w01j&et=1893456000&method=md5&sign=EpvLGFTUYQ5eQySUc0BZmA%3D%3D";   // 用Python脚本生成的产品Token，每次过1小时需要重新生成
+        
+        const API_URL = `https://open.iot.10086.cn/api/v1/devices/${DEVICE_NAME}/datastreams?product_id=${PRODUCT_ID}`;
+        let lastId = "";
+        const box = document.getElementById("box"), icon = document.getElementById("icon"), text = document.getElementById("text"), level = document.getElementById("level"), logList = document.getElementById("logList");
+        const events = {0:"glass_break",1:"baby_cry",2:"knock"};
+        const labels = {
+            glass_break:["🔴","玻璃破碎！","紧急","glass"],
+            baby_cry:["🟠","婴儿啼哭","重要","baby"],
+            knock:["🔵","有人敲门","一般","knock"]
+        };
+        let timer = null;
+        function reset(){
+            clearTimeout(timer);
+            timer=setTimeout(()=>{
+                box.className="alarm-box";
+                icon.textContent="🟢";
+                text.textContent="待机中";
+                level.textContent="正在监听环境声音";
+            },3000);
+        }
+        function addLog(e,l,tg){
+            const d=new Date(),ts=d.toLocaleTimeString(),el=document.createElement("div");
+            el.className="log-item";
+            el.innerHTML=`<span>${ts} ${l}</span><span class="tag ${tg}">${e}</span>`;
+            logList.insertBefore(el,logList.firstChild);
+            while(logList.children.length>20)logList.removeChild(logList.lastChild);
+        }
+        async function fetchData(){
+            try{
+                const res=await fetch(API_URL,{
+                    headers:{"Authorization": PRODUCT_TOKEN}
+                });
+                const json=await res.json();
+                if(json.errno!==0)return;
+                const data=json.data;
+                const evtStream=data.find(d=>d.id==="event");
+                if(!evtStream||!evtStream.current_value)return;
+                const evtVal=evtStream.current_value;
+                const evtId=String(evtVal);
+                if(evtId===lastId)return;
+                lastId=evtId;
+                const name=events[evtId]||"unknown";
+                const info=labels[name]||["🟢","未知事件","提示","none"];
+                box.className="alarm-box";box.classList.add(info[3]);
+                icon.textContent=info[0];text.textContent=info[1];level.textContent=new Date().toLocaleTimeString();
+                addLog(name,info[1],info[3]);
+                reset();
+            }catch(e){}
+        }
+        setInterval(fetchData,2000);
+        fetchData();
+    </script>
+</body>
+</html>
