@@ -1,0 +1,23 @@
+name: OneNET数据代理
+on:
+  schedule:
+    - cron: '*/1 * * * *'   # 每分钟拉一次
+  workflow_dispatch:         # 允许手动触发
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取OneNET数据
+        run: |
+          curl -H "Authorization: ${{ secrets.ONENET_TOKEN }}" \
+            "https://open.iot.10086.cn/api/v1/devices/ESP32_HomeGuard/datastreams?product_id=${{ secrets.PRODUCT_ID }}" \
+            -o data.json
+
+      - name: 部署到Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          keep_files: true
+          force_orphan: false
