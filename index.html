@@ -53,10 +53,8 @@
     <div class="logs"><h4>事件记录</h4><div id="logList"><div class="log-item"><span>--</span><span class="tag">等待事件</span></div></div></div>
 
     <script>
-        // 直接读取 GitHub Actions 生成的 data.json，无跨域问题
         const API_URL = "data.json";
 
-        // 改用组合 ID 来判断新事件，避免相同类型事件被忽略
         let lastEventId = "";
         const box = document.getElementById("box"), icon = document.getElementById("icon"), text = document.getElementById("text"), level = document.getElementById("level"), logList = document.getElementById("logList"), dot = document.getElementById("dot"), statusText = document.getElementById("statusText");
 
@@ -87,7 +85,8 @@
 
         async function fetchData(){
             try{
-                const res = await fetch(API_URL);
+                // 关键：给 data.json 加上时间戳参数，绕过缓存
+                const res = await fetch(API_URL + "?t=" + Date.now());
                 const json = await res.json();
 
                 dot.className = "dot online";
@@ -102,8 +101,8 @@
                 if (!eventItem) return;
 
                 const eventVal = eventItem.value;
-                const eventTime = eventItem.time || 0;  // 使用时间戳作为唯一标识的一部分
-                const newEventId = eventVal + "_" + eventTime;  // 组合成唯一 ID
+                const eventTime = eventItem.time || 0;
+                const newEventId = eventVal + "_" + eventTime;
 
                 if (newEventId === lastEventId) return;
                 lastEventId = newEventId;
@@ -130,7 +129,7 @@
         fetchData();
     </script>
 
-    <!-- Service Worker 注册（离线缓存支持） -->
+    <!-- Service Worker 注册 -->
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/homeguard/sw.js').then(function(reg) {
