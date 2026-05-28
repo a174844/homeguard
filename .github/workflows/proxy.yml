@@ -3,6 +3,8 @@ on:
   schedule:
     - cron: '*/1 * * * *'
   workflow_dispatch:
+  repository_dispatch:          # 新增：允许外部 HTTP 触发
+    types: [fetch_data]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
