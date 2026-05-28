@@ -1,23 +1,26 @@
-name: OneNET数据代理
+name: OneNET 数据代理
 on:
   schedule:
-    - cron: '*/1 * * * *'   # 每分钟拉一次
+    - cron: '*/1 * * * *'   # 每分钟拉取一次
   workflow_dispatch:         # 允许手动触发
 
 jobs:
   fetch:
     runs-on: ubuntu-latest
     steps:
-      - name: 拉取OneNET数据
+      - name: 拉取 OneNET 数据
         run: |
-          curl -v -H "Authorization: ${{ secrets.ONENET_TOKEN }}" \
-  "https://iot-api.heclouds.com/thingmodel/query-device-property?product_id=${{ secrets.PRODUCT_ID }}&device_name=ESP32_HomeGuard" \
-  -o data.json
+          curl -s -H "Authorization: ${{ secrets.ONENET_TOKEN }}" \
+            "https://iot-api.heclouds.com/thingmodel/query-device-property?product_id=${{ secrets.PRODUCT_ID }}&device_name=ESP32_HomeGuard" \
+            -o data.json
+          echo "===== 拉取结果 ====="
+          cat data.json
 
-      - name: 部署到Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: 部署到 Pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .
           keep_files: true
-          force_orphan: false
+          force_orphan: true
+          enable_jekyll: false
