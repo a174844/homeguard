@@ -8,6 +8,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="家庭安防">
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="hutaopa.png" sizes="1000x1000">
+    <link rel="apple-touch-icon" href="hutaopa.png">
     <title>家庭安防</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -89,13 +91,11 @@
                 dot.className = "dot online";
                 statusText.textContent = "监控中";
 
-                // 解析 OneNET 返回的数据结构：{"code":0,"data":[{"identifier":"event","value":"knock"},{"identifier":"level","value":"1"}]}
                 if (json.code !== 0) return;
 
                 const data = json.data;
                 if (!data || data.length === 0) return;
 
-                // 提取 event 值
                 const eventItem = data.find(item => item.identifier === "event");
                 if (!eventItem) return;
 
@@ -123,6 +123,10 @@
 
         setInterval(fetchData, 2000);
         fetchData();
-    </script>
+    <script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/homeguard/sw.js');
+    }
+</script>
 </body>
 </html>
