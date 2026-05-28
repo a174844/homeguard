@@ -1,0 +1,15 @@
+{
+    "name": "家庭安防系统",
+    "short_name": "家庭安防",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0a0a0a",
+    "theme_color": "#0a0a0a",
+    "icons": [
+        {
+            "src": "hutaopa.png",
+            "sizes": "1000x1000",
+            "type": "image/png"
+        }
+    ]
+}
