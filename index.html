@@ -56,7 +56,8 @@
         // 直接读取 GitHub Actions 生成的 data.json，无跨域问题
         const API_URL = "data.json";
 
-        let lastEvent = "";
+        // 改用组合 ID 来判断新事件，避免相同类型事件被忽略
+        let lastEventId = "";
         const box = document.getElementById("box"), icon = document.getElementById("icon"), text = document.getElementById("text"), level = document.getElementById("level"), logList = document.getElementById("logList"), dot = document.getElementById("dot"), statusText = document.getElementById("statusText");
 
         const labels = {
@@ -101,8 +102,11 @@
                 if (!eventItem) return;
 
                 const eventVal = eventItem.value;
-                if (eventVal === lastEvent) return;
-                lastEvent = eventVal;
+                const eventTime = eventItem.time || 0;  // 使用时间戳作为唯一标识的一部分
+                const newEventId = eventVal + "_" + eventTime;  // 组合成唯一 ID
+
+                if (newEventId === lastEventId) return;
+                lastEventId = newEventId;
 
                 const info = labels[eventVal];
                 if (!info) return;
