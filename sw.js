@@ -1,21 +1,32 @@
-// 强制卸载所有旧版 Service Worker
+// 安装时立即激活
 self.addEventListener("install", function(e) {
-    self.skipWaiting(); // 立即激活新 SW，不等待旧页面关闭
+    self.skipWaiting();
 });
 
+// 激活时清空所有旧缓存
 self.addEventListener("activate", function(e) {
     e.waitUntil(
         caches.keys().then(function(keys) {
             return Promise.all(keys.map(function(key) {
-                return caches.delete(key); // 清空所有缓存
+                return caches.delete(key);
             }));
         }).then(function() {
-            return self.clients.claim(); // 立即接管所有页面
+            return self.clients.claim();
         })
     );
 });
 
-// 关键：不再缓存任何请求，全部从网络获取
+// Network First 策略：优先网络，网络失败才用缓存
 self.addEventListener("fetch", function(e) {
-    e.respondWith(fetch(e.request));
+    e.respondWith(
+        fetch(e.request)
+            .then(function(response) {
+                // 网络成功，直接返回
+                return response;
+            })
+            .catch(function() {
+                // 网络失败，尝试读缓存
+                return caches.match(e.request);
+            })
+    );
 });
