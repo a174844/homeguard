@@ -50,22 +50,18 @@
     </div>
     <div class="logs"><h4>事件记录</h4><div id="logList"><div class="log-item"><span>--</span><span class="tag">等待事件</span></div></div></div>
     <script>
-        // ========== 请修改下面的三个值 ==========
-        const PRODUCT_ID = "W9Obq2w01j";          // 例如 "3ojQ2pkCWF"
-        const DEVICE_NAME = "ESP32_HomeGuard";   // 设备名称
-        const PRODUCT_TOKEN = "version=2018-10-31&res=products%2FW9Obq2w01j&et=1893456000&method=md5&sign=EpvLGFTUYQ5eQySUc0BZmA%3D%3D";   
-        // 使用 CORS 代理解决跨域问题
-        const API_BASE = `https://open.iot.10086.cn/api/v1/devices/${DEVICE_NAME}/datastreams?product_id=${PRODUCT_ID}`;
-        const API_URL = `https://api.allorigins.win/raw?url=${encodeURIComponent(API_BASE)}`;
-        
-        let lastId = "";
-        const box = document.getElementById("box"), icon = document.getElementById("icon"), text = document.getElementById("text"), level = document.getElementById("level"), logList = document.getElementById("logList");
-        const events = {0:"glass_break",1:"baby_cry",2:"knock"};
+        // 直接读取 GitHub Actions 生成的 data.json，无跨域问题
+        const API_URL = "data.json";
+
+        let lastEvent = "";
+        const box = document.getElementById("box"), icon = document.getElementById("icon"), text = document.getElementById("text"), level = document.getElementById("level"), logList = document.getElementById("logList"), dot = document.getElementById("dot"), statusText = document.getElementById("statusText");
+
         const labels = {
             glass_break:["🔴","玻璃破碎！","紧急","glass"],
             baby_cry:["🟠","婴儿啼哭","重要","baby"],
             knock:["🔵","有人敲门","一般","knock"]
         };
+
         let timer = null;
         function reset(){
             clearTimeout(timer);
@@ -76,6 +72,7 @@
                 level.textContent="正在监听环境声音";
             },3000);
         }
+
         function addLog(e,l,tg){
             const d=new Date(),ts=d.toLocaleTimeString(),el=document.createElement("div");
             el.className="log-item";
@@ -83,32 +80,48 @@
             logList.insertBefore(el,logList.firstChild);
             while(logList.children.length>20)logList.removeChild(logList.lastChild);
         }
+
         async function fetchData(){
             try{
-                const res=await fetch(API_URL,{
-                    headers:{"Authorization": PRODUCT_TOKEN}
-                });
-                const json=await res.json();
-                console.log("API返回:", json);
-                if(json.errno!==0)return;
-                const data=json.data;
-                const evtStream=data.find(d=>d.id==="event");
-                if(!evtStream||!evtStream.current_value)return;
-                const evtVal=evtStream.current_value;
-                const evtId=String(evtVal);
-                if(evtId===lastId)return;
-                lastId=evtId;
-                const name=events[evtId]||"unknown";
-                const info=labels[name]||["🟢","未知事件","提示","none"];
-                box.className="alarm-box";box.classList.add(info[3]);
-                icon.textContent=info[0];text.textContent=info[1];level.textContent=new Date().toLocaleTimeString();
-                addLog(name,info[1],info[3]);
+                const res = await fetch(API_URL);
+                const json = await res.json();
+
+                dot.className = "dot online";
+                statusText.textContent = "监控中";
+
+                // 解析 OneNET 返回的数据结构：{"code":0,"data":[{"identifier":"event","value":"knock"},{"identifier":"level","value":"1"}]}
+                if (json.code !== 0) return;
+
+                const data = json.data;
+                if (!data || data.length === 0) return;
+
+                // 提取 event 值
+                const eventItem = data.find(item => item.identifier === "event");
+                if (!eventItem) return;
+
+                const eventVal = eventItem.value;
+                if (eventVal === lastEvent) return;
+                lastEvent = eventVal;
+
+                const info = labels[eventVal];
+                if (!info) return;
+
+                box.className="alarm-box";
+                box.classList.add(info[3]);
+                icon.textContent = info[0];
+                text.textContent = info[1];
+                level.textContent = new Date().toLocaleTimeString();
+
+                addLog(eventVal, info[1], info[3]);
                 reset();
+
             }catch(e){
-                console.error("API请求失败:", e);
+                dot.className = "dot offline";
+                statusText.textContent = "连接断开";
             }
         }
-        setInterval(fetchData,2000);
+
+        setInterval(fetchData, 2000);
         fetchData();
     </script>
 </body>
