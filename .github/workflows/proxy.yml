@@ -1,8 +1,11 @@
 name: OneNET 数据代理
 on:
   schedule:
-    - cron: '*/1 * * * *'   # 每分钟拉取一次
-  workflow_dispatch:         # 允许手动触发
+    - cron: '*/1 * * * *'
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   fetch:
@@ -22,5 +25,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .
           keep_files: true
-          force_orphan: true
+          force_orphan: false
           enable_jekyll: false
