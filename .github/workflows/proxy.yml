@@ -10,9 +10,9 @@ jobs:
     steps:
       - name: 拉取OneNET数据
         run: |
-          curl -H "Authorization: ${{ secrets.ONENET_TOKEN }}" \
-            "https://open.iot.10086.cn/api/v1/devices/ESP32_HomeGuard/datastreams?product_id=${{ secrets.PRODUCT_ID }}" \
-            -o data.json
+          curl -v -H "Authorization: ${{ secrets.ONENET_TOKEN }}" \
+  "https://iot-api.heclouds.com/thingmodel/query-device-property?product_id=${{ secrets.PRODUCT_ID }}&device_name=ESP32_HomeGuard" \
+  -o data.json
 
       - name: 部署到Pages
         uses: peaceiris/actions-gh-pages@v3
