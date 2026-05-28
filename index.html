@@ -51,11 +51,13 @@
         </div>
     </div>
     <div class="logs"><h4>事件记录</h4><div id="logList"><div class="log-item"><span>--</span><span class="tag">等待事件</span></div></div></div>
+
     <script>
         // 直接读取 GitHub Actions 生成的 data.json，无跨域问题
         const API_URL = "data.json";
 
-        let lastEvent = "";
+        // 改用组合 ID 来判断新事件，避免相同类型事件被忽略
+        let lastEventId = "";
         const box = document.getElementById("box"), icon = document.getElementById("icon"), text = document.getElementById("text"), level = document.getElementById("level"), logList = document.getElementById("logList"), dot = document.getElementById("dot"), statusText = document.getElementById("statusText");
 
         const labels = {
@@ -100,8 +102,11 @@
                 if (!eventItem) return;
 
                 const eventVal = eventItem.value;
-                if (eventVal === lastEvent) return;
-                lastEvent = eventVal;
+                const eventTime = eventItem.time || 0;  // 使用时间戳作为唯一标识的一部分
+                const newEventId = eventVal + "_" + eventTime;  // 组合成唯一 ID
+
+                if (newEventId === lastEventId) return;
+                lastEventId = newEventId;
 
                 const info = labels[eventVal];
                 if (!info) return;
@@ -123,10 +128,17 @@
 
         setInterval(fetchData, 2000);
         fetchData();
+    </script>
+
+    <!-- Service Worker 注册（离线缓存支持） -->
     <script>
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/homeguard/sw.js');
-    }
-</script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/homeguard/sw.js').then(function(reg) {
+                console.log('SW registered');
+            }).catch(function(err) {
+                console.log('SW failed:', err);
+            });
+        }
+    </script>
 </body>
 </html>
