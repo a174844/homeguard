@@ -2,9 +2,10 @@ self.addEventListener("install", function(e) {
     e.waitUntil(
         caches.open("homeguard-v1").then(function(cache) {
             return cache.addAll([
-                "/",
-                "/index.html",
-                "/manifest.json"
+                "/homeguard/",
+                "/homeguard/index.html",
+                "/homeguard/manifest.json",
+                "/homeguard/data.json"
             ]);
         })
     );
