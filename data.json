@@ -1,1 +1,1 @@
-{"code":0,"data":[{"identifier":"event","data_type":"string","access_mode":"读写","name":"event"},{"identifier":"level","data_type":"int32","access_mode":"读写","name":"level"}],"msg":"succ","request_id":"bd6933db62f7408b834533f30c30c4e1"}
+{"code":0,"data":[{"identifier":"event","data_type":"string","access_mode":"读写","name":"event"},{"identifier":"level","data_type":"int32","access_mode":"读写","name":"level"}],"msg":"succ","request_id":"314754340f5b4e738dfffe83819336fa"}
