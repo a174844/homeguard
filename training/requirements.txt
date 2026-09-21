@@ -1,0 +1,6 @@
+numpy>=1.24
+scipy>=1.10
+tensorflow>=2.13
+
+# PC 端对照验证（tools/pc_verify/verify_wav.py）可用更轻的 tflite-runtime 替代 tensorflow
+# tflite-runtime>=2.13
